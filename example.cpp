@@ -18,21 +18,8 @@ using namespace ctre::phoenix::motorcontrol;
 using namespace ctre::phoenix::motorcontrol::can;
 
 /* make some talons for drive train */
-//TalonSRX talLeft(11);
-//TalonSRX talRght(12);
-
-void initDrive() {
-    /* both talons should blink green when driving forward */
-    talRght.SetInverted(true);
-}
-
-void drive(double fwd, double turn) {
-    double left = fwd - turn;
-    double rght = fwd + turn; /* positive turn means turn robot LEFT */
-
-    talLeft.Set(ControlMode::PercentOutput, left);
-    talRght.Set(ControlMode::PercentOutput, rght);
-}
+TalonSRX talLeft(11);
+TalonSRX talRght(12);
 
 /** simple wrapper for code cleanup */
 void sleepApp(int ms) {
@@ -47,12 +34,12 @@ int main() {
     ctre::phoenix::platform::can::SetCANInterface(interface.c_str());
 
     /* setup drive */
-    //initDrive();
+    talRght.SetInverted(true);
 
     while (true) {
         /* we are looking for gamepad (first time or after disconnect),
             neutral drive until gamepad (re)connected. */
-        //drive(0, 0);
+
 
         // wait for gamepad
         printf("Waiting for gamepad...\n");
@@ -110,20 +97,20 @@ int main() {
                 if (event.jdevice.type == SDL_JOYDEVICEREMOVED) { break; }
             }
 
-            /* grab some stick values
-            double y = ((double)SDL_JoystickGetAxis(joy, 1)) / -32767.0;
-            double turn = ((double)SDL_JoystickGetAxis(joy, 2)) / -32767.0;
-            drive(y, turn);*/
+            /* grab some stick values */
+            double left_y_axe = ((double) SDL_JoystickGetAxis(joy, 1)) / -32767.0;
+            double right_y_axe = ((double) SDL_JoystickGetAxis(joy, 3)) / -32767.0;
 
-            double left_y_axe = ((double) SDL_JoystickGetAxis(joy, 2)) / -32767.0;
-            double right_y_axe = ((double) SDL_JoystickGetAxis(joy, 4)) / -32767.0;
-
-//            talLeft.Set(ControlMode::PercentOutput,left_y_axe);
-//            talRght.Set(ControlMode::PercentOutput,right_y_axe);
+            // Uncomment for debug
+//            printf("left track : %f \n",left_y_axe);
+//            printf("right track : %f \n",right_y_axe);
+            talLeft.Set(ControlMode::PercentOutput,left_y_axe);
+            talRght.Set(ControlMode::PercentOutput,right_y_axe);
 
 
             /* [SAFETY] only enable drive if top left shoulder button is held down */
-            if (SDL_JoystickGetButton(joy, 4)) {
+            if (SDL_JoystickGetButton(joy, 7)) {
+//                printf("testing feed enable \n");
                 ctre::phoenix::unmanaged::FeedEnable(100);
             }
 
@@ -132,7 +119,7 @@ int main() {
         }
 
         /* we've left the loop, likely due to gamepad disconnect */
-        drive(0, 0);
+
         SDL_JoystickClose(joy);
         printf("gamepad disconnected\n");
     }
